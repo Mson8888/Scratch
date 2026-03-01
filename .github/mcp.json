@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "name": "playwright-local",
+      "type": "exec",
+      "command": "npx playwright test",
+      "description": "Run Playwright tests using the local npm script. Do not store secrets here; configure auth in your environment when needed.",
+      "env": {}
+    }
+  },
+  "default": "playwright"
+}
