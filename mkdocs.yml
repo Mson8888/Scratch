@@ -1,0 +1,4 @@
+site_name: Tetris Game
+docs_dir: .
+nav:
+  - Home: index.html

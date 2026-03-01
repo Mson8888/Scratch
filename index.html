@@ -1,5 +1,51 @@
 <!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Tetris — Local Test</title>
+    <style>
+      body{display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#111;color:#fff;font-family:Arial,Helvetica,sans-serif}
+      #wrap{display:flex;flex-direction:column;align-items:center}
+      canvas{background:#000;image-rendering:pixelated}
+      .help{opacity:0.8;font-size:13px;margin-top:12px}
+    </style>
+  </head>
+  <body>
+    <div id="wrap">
+      <div id="game-area" style="display:flex;align-items:flex-start;gap:12px;">
+        <canvas id="game"></canvas>
+        <div id="sidebar" style="width:140px">
+          <div id="next-piece" style="margin-bottom:12px;color:#fff;font-family:monospace"></div>
+          <div id="score-board" style="margin-bottom:12px;color:#fff;font-family:monospace">
+            <div>SCORE: <span id="score">0</span></div>
+            <div>LINES: <span id="lines">0</span></div>
+          </div>
+          <div id="highscores" style="color:#fff">
+            <h3 style="margin:6px 0 6px 0">High Scores</h3>
+            <ol id="hsList" style="padding-left:18px;margin:0;font-family:monospace"></ol>
+          </div>
+        </div>
+      </div>
+      <div class="help">Use arrow keys: ← → rotate ↑ ↓  • Space: hard drop</div>
+    </div>
+
+    <div id="overlay" style="position:fixed;left:0;right:0;top:0;bottom:0;display:none;align-items:center;justify-content:center;">
+      <div style="background:rgba(0,0,0,0.9);padding:20px;border:1px solid #444;color:#fff;max-width:360px;margin:auto;text-align:center;">
+        <div id="overlay-msg" style="margin-bottom:8px;font-family:monospace"></div>
+        <input id="nameInput" placeholder="Your name" style="padding:6px 8px;font-size:14px;margin-bottom:8px;width:80%" />
+        <div>
+          <button id="saveScore" style="padding:6px 12px;margin-right:8px">Save</button>
+          <button id="restartBtn" style="padding:6px 12px">Restart</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
+<!doctype html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
