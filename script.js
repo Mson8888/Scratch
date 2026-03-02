@@ -6,12 +6,19 @@ const BLOCK = 24; // pixel size for each block
 const canvas = document.getElementById('game');
 if (!canvas) throw new Error('Canvas element with id "game" not found.');
 const ctx = canvas.getContext('2d');
-canvas.width = COLS * BLOCK + 160; // extra space for next/score
+// Keep canvas exactly the playfield size; sidebar is a separate DOM element.
+canvas.width = COLS * BLOCK;
 canvas.height = ROWS * BLOCK;
+canvas.style.width = canvas.width + 'px';
+canvas.style.height = canvas.height + 'px';
 
-// Colors per tetromino type
+// Colors per tetromino type with cute animals/food
 const COLORS = {
-  I: '#00f0f0', J: '#0000f0', L: '#f0a000', O: '#f0f000', S: '#00f000', T: '#a000f0', Z: '#f00000'
+  I: '🐟', J: '🐮', L: '🐷', O: '🍎', S: '🍕', T: '🐰', Z: '🐝', BOMB: '💣'
+};
+
+const COLOR_BG = {
+  I: '#00f0f0', J: '#0000f0', L: '#f0a000', O: '#f0f000', S: '#00f000', T: '#a000f0', Z: '#f00000', BOMB: '#888'
 };
 
 // Tetromino matrices (4x4 where helpful)
@@ -22,7 +29,8 @@ const SHAPES = {
   O: [[1,1],[1,1]],
   S: [[0,1,1],[1,1,0],[0,0,0]],
   T: [[0,1,0],[1,1,1],[0,0,0]],
-  Z: [[1,1,0],[0,1,1],[0,0,0]]
+  Z: [[1,1,0],[0,1,1],[0,0,0]],
+  BOMB: [[1]]
 };
 
 // Game state
@@ -37,6 +45,10 @@ let score = 0;
 let lines = 0;
 let level = 0;
 let gameOver = false;
+let isPaused = false;
+let blocksSpawned = 0;
+let bombActive = false;
+let nextBombIn = Math.floor(Math.random() * 10) + 10; // 10-20 blocks
 
 // High score persistence
 const HS_KEY = 'tetris_highscores_v1';
@@ -92,8 +104,10 @@ function showOverlay(message, showInput=true, defaultName=''){
 function restartGame(){
   // reset board
   for (let y=0;y<ROWS;y++) for (let x=0;x<COLS;x++) board[y][x]=0;
-  score = 0; lines = 0; level = 0; dropInterval = 1000; dropCounter = 0; gameOver = false;
+  score = 0; lines = 0; level = 0; dropInterval = 1000; dropCounter = 0; gameOver = false; isPaused = false;
+  blocksSpawned = 0; bombActive = false; nextBombIn = Math.floor(Math.random() * 10) + 10;
   refillBag(); nextPiece = nextFromBag(); spawn(); renderHighScores();
+  updatePauseButton();
 }
 
 function rotate(matrix) {
@@ -118,7 +132,15 @@ function refillBag(){
 
 function nextFromBag(){
   if (bag.length === 0) refillBag();
-  return bag.pop();
+  const piece = bag.pop();
+  blocksSpawned++;
+  // Check if we should spawn a bomb
+  if (!bombActive && blocksSpawned >= nextBombIn && nextBombIn > 0) {
+    bombActive = true;
+    nextBombIn = Math.floor(Math.random() * 10) + 10;
+    return 'BOMB';
+  }
+  return piece;
 }
 
 function spawn(){
@@ -156,7 +178,30 @@ function merge(){
       if (m[y][x]){
         const bx = current.x + x;
         const by = current.y + y;
-        if (by >= 0 && by < ROWS && bx >=0 && bx < COLS) board[by][bx] = current.type;
+        if (by >= 0 && by < ROWS && bx >=0 && bx < COLS) {
+          if (current.type === 'BOMB') {
+            // Bomb explodes blocks around it
+            explodeBomb(bx, by);
+            bombActive = false;
+          } else {
+            board[by][bx] = current.type;
+          }
+        }
+      }
+    }
+  }
+}
+
+function explodeBomb(bx, by){
+  // Explosion radius: 1 block in each direction
+  const explosionArea = [
+    [bx, by], [bx-1, by], [bx+1, by], [bx, by-1], [bx, by+1]
+  ];
+  for (const [x, y] of explosionArea) {
+    if (x >= 0 && x < COLS && y >= 0 && y < ROWS) {
+      if (board[y][x]) {
+        board[y][x] = 0;
+        score += 10;
       }
     }
   }
@@ -164,8 +209,10 @@ function merge(){
 
 function clearLines(){
   let full = 0;
+  let clearedRows = [];
   for (let y = ROWS-1; y>=0; y--){
     if (board[y].every(cell => cell)){
+      clearedRows.push(y);
       board.splice(y,1);
       board.unshift(Array(COLS).fill(0));
       full++;
@@ -175,8 +222,25 @@ function clearLines(){
   if (full>0){
     lines += full;
     score += [0,40,100,300,1200][full] * (level+1);
+    // Level increases every 10 lines
     level = Math.floor(lines/10);
     dropInterval = Math.max(100, 1000 - level*100);
+    
+    // Spawn new line of random blocks when 10+ lines cleared
+    if (full >= 10 || (lines % 10 === 0 && lines > 0)) {
+      spawnBlockLine();
+    }
+  }
+}
+
+function spawnBlockLine(){
+  // Insert a random line of blocks somewhere in the middle-upper area
+  const insertRow = Math.floor(Math.random() * (ROWS / 2)) + Math.floor(ROWS / 4);
+  if (insertRow < ROWS - 1) {
+    const types = ['I','J','L','O','S','T','Z'];
+    const newLine = Array(COLS).fill(0).map(() => types[Math.floor(Math.random() * types.length)]);
+    board.splice(insertRow, 0, newLine);
+    board.pop(); // Remove bottom row to keep board size
   }
 }
 
@@ -222,11 +286,30 @@ document.addEventListener('keydown', e => {
     if (!collide(current.matrix, current.x, current.y+1)) current.y++;
   }
   else if (e.code === 'Space') { hardDrop(); }
+  else if (e.key === 'p' || e.key === 'P') { togglePause(); }
 });
 
+function togglePause(){
+  if (!gameOver) {
+    isPaused = !isPaused;
+    updatePauseButton();
+  }
+}
+
+function updatePauseButton(){
+  const btn = document.getElementById('pauseBtn');
+  if (btn) btn.textContent = isPaused ? 'RESUME' : 'PAUSE';
+}
+
 function drawBlock(x,y,color){
-  ctx.fillStyle = color;
+  ctx.fillStyle = COLOR_BG[color] || '#999';
   ctx.fillRect(x*BLOCK+1, y*BLOCK+1, BLOCK-2, BLOCK-2);
+  // Draw emoji on the block
+  ctx.fillStyle = '#000';
+  ctx.font = '14px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(COLORS[color] || '?', x*BLOCK + BLOCK/2, y*BLOCK + BLOCK/2);
 }
 
 function draw(){
@@ -239,7 +322,7 @@ function draw(){
     for (let x=0;x<COLS;x++){
       const cell = board[y][x];
       if (cell){
-        drawBlock(x,y,COLORS[cell] || '#999');
+        drawBlock(x,y,cell);
       } else {
         ctx.strokeStyle = 'rgba(255,255,255,0.03)';
         ctx.strokeRect(x*BLOCK, y*BLOCK, BLOCK, BLOCK);
@@ -248,14 +331,14 @@ function draw(){
   }
 
   // Draw current piece
-  if (current){
+  if (current && !isPaused){
     const m = current.matrix;
     for (let y=0;y<m.length;y++){
       for (let x=0;x<m[y].length;x++){
         if (m[y][x]){
           const px = current.x + x;
           const py = current.y + y;
-          if (py>=0) drawBlock(px,py,COLORS[current.type]);
+          if (py>=0) drawBlock(px,py,current.type);
         }
       }
     }
@@ -264,10 +347,15 @@ function draw(){
   // Update DOM score/lines/next and render highscores
   const scoreEl = document.getElementById('score');
   const linesEl = document.getElementById('lines');
+  const levelEl = document.getElementById('level');
   const nextEl = document.getElementById('next-piece');
   if (scoreEl) scoreEl.textContent = String(score);
   if (linesEl) linesEl.textContent = String(lines);
-  if (nextEl){ nextEl.textContent = 'NEXT: ' + (nextPiece || ''); nextEl.style.color = COLORS[nextPiece] || '#fff'; }
+  if (levelEl) levelEl.textContent = String(level);
+  if (nextEl){ 
+    nextEl.textContent = 'NEXT: ' + (nextPiece || ''); 
+    nextEl.style.color = nextPiece === 'BOMB' ? '#f00' : '#fff';
+  }
   renderHighScores();
 
   if (gameOver){
@@ -277,12 +365,20 @@ function draw(){
     ctx.font = '36px monospace';
     ctx.fillText('GAME OVER', 20, canvas.height/2 + 12);
   }
+  
+  if (isPaused){
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillRect(0, canvas.height/2 - 30, canvas.width, 60);
+    ctx.fillStyle = '#fff';
+    ctx.font = '32px monospace';
+    ctx.fillText('PAUSED', 40, canvas.height/2 + 8);
+  }
 }
 
 function update(time = 0){
   const delta = time - lastTime;
   lastTime = time;
-  if (!gameOver){
+  if (!gameOver && !isPaused){
     dropCounter += delta;
     if (dropCounter > dropInterval){
       dropCounter = 0;
@@ -302,3 +398,46 @@ refillBag();
 nextPiece = nextFromBag();
 spawn();
 requestAnimationFrame(update);
+
+// Wire pause button
+const pauseBtn = document.getElementById('pauseBtn');
+if (pauseBtn) pauseBtn.addEventListener('click', togglePause);
+
+// Mobile controls: show on small screens and wire touch handlers
+function enableMobileControls(){
+  const mc = document.getElementById('mobile-controls');
+  if (!mc) return;
+  // Simple heuristic: show controls if viewport width < 720px
+  if (window.innerWidth < 720) mc.style.display = 'flex';
+  else mc.style.display = 'none';
+
+  const dpad = mc.querySelector('#dpad');
+  if (dpad){
+    dpad.addEventListener('touchstart', e => { e.preventDefault(); const btn = e.target.closest('button[data-action]'); if (!btn) return; handleMobileAction(btn.getAttribute('data-action'), true); });
+    dpad.addEventListener('touchend', e => { e.preventDefault(); const btn = e.target.closest('button[data-action]'); if (!btn) return; handleMobileAction(btn.getAttribute('data-action'), false); });
+    dpad.addEventListener('mousedown', e => { const btn = e.target.closest('button[data-action]'); if (!btn) return; handleMobileAction(btn.getAttribute('data-action'), true); });
+    dpad.addEventListener('mouseup', e => { const btn = e.target.closest('button[data-action]'); if (!btn) return; handleMobileAction(btn.getAttribute('data-action'), false); });
+  }
+
+  const hard = document.getElementById('hardDropBtn');
+  if (hard) hard.addEventListener('click', e => { hardDrop(); });
+
+  // Soft-drop continuous while holding 'down'
+  let softDropTimer = null;
+  function handleMobileAction(action, pressed){
+    if (action === 'left' && pressed) move(-1);
+    if (action === 'right' && pressed) move(1);
+    if (action === 'up' && pressed) rotateCurrent();
+    if (action === 'down'){
+      if (pressed){
+        // immediate step
+        if (!collide(current.matrix, current.x, current.y+1)) current.y++;
+        // then start interval
+        softDropTimer = setInterval(()=>{ if (!collide(current.matrix, current.x, current.y+1)) current.y++; else { clearInterval(softDropTimer); } }, 120);
+      } else { if (softDropTimer){ clearInterval(softDropTimer); softDropTimer = null; } }
+    }
+  }
+}
+
+window.addEventListener('resize', enableMobileControls);
+enableMobileControls();

@@ -3,31 +3,53 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Tetris — Local Test</title>
+    <title>Tetris — Cute Critters</title>
     <style>
       body{display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#111;color:#fff;font-family:Arial,Helvetica,sans-serif}
       #wrap{display:flex;flex-direction:column;align-items:center}
       canvas{background:#000;image-rendering:pixelated}
       .help{opacity:0.8;font-size:13px;margin-top:12px}
+      button{background:#333;color:#fff;border:1px solid #666;padding:8px 12px;cursor:pointer;font-weight:bold}
+      button:hover{background:#555}
     </style>
   </head>
   <body>
     <div id="wrap">
-      <div id="game-area" style="display:flex;align-items:flex-start;gap:12px;">
-        <canvas id="game"></canvas>
-        <div id="sidebar" style="width:140px">
-          <div id="next-piece" style="margin-bottom:12px;color:#fff;font-family:monospace"></div>
-          <div id="score-board" style="margin-bottom:12px;color:#fff;font-family:monospace">
+      <div id="game-area" style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+        <canvas id="game" style="flex:0 0 auto;display:block;"></canvas>
+        <div id="sidebar" style="width:140px;flex:0 0 auto">
+          <div id="next-piece" style="margin-bottom:12px;color:#fff;font-family:monospace;font-size:12px"></div>
+          <div id="score-board" style="margin-bottom:12px;color:#fff;font-family:monospace;font-size:12px">
             <div>SCORE: <span id="score">0</span></div>
             <div>LINES: <span id="lines">0</span></div>
+            <div>LEVEL: <span id="level">0</span></div>
           </div>
-          <div id="highscores" style="color:#fff">
-            <h3 style="margin:6px 0 6px 0">High Scores</h3>
-            <ol id="hsList" style="padding-left:18px;margin:0;font-family:monospace"></ol>
+          <button id="pauseBtn" style="width:100%;margin-bottom:12px">PAUSE</button>
+          <div id="highscores" style="color:#fff;font-size:12px">
+            <h3 style="margin:6px 0 6px 0;font-size:12px">High Scores</h3>
+            <ol id="hsList" style="padding-left:18px;margin:0;font-family:monospace;font-size:11px"></ol>
           </div>
         </div>
       </div>
-      <div class="help">Use arrow keys: ← → rotate ↑ ↓  • Space: hard drop</div>
+      <div class="help">Arrow keys: ← → rotate ↑ ↓  • Space: hard drop • P: pause</div>
+
+      <!-- Mobile controls -->
+      <div id="mobile-controls" style="margin-top:12px;display:none;align-items:center;gap:12px;justify-content:center;">
+        <div id="dpad" style="width:140px;display:grid;grid-template-columns:repeat(3,44px);grid-template-rows:repeat(3,44px);gap:6px;">
+          <button data-action="" style="visibility:hidden"></button>
+          <button data-action="up" class="ctl">⤴</button>
+          <button data-action="" style="visibility:hidden"></button>
+          <button data-action="left" class="ctl">◀</button>
+          <button data-action="down" class="ctl">▼</button>
+          <button data-action="right" class="ctl">▶</button>
+          <button data-action="" style="visibility:hidden"></button>
+          <button data-action="drop" class="ctl">↓</button>
+          <button data-action="" style="visibility:hidden"></button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button id="hardDropBtn" style="padding:10px 14px">Hard Drop</button>
+        </div>
+      </div>
     </div>
 
     <div id="overlay" style="position:fixed;left:0;right:0;top:0;bottom:0;display:none;align-items:center;justify-content:center;">
@@ -43,21 +65,4 @@
 
     <script src="script.js"></script>
   </body>
-</html>
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Tetris — Starter</title>
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <main>
-    <h1>Tetris — Starter</h1>
-    <canvas id="game" width="240" height="400" aria-label="Tetris game"></canvas>
-    <p>Use arrow keys to move and rotate pieces. Open this folder and edit <code>script.js</code> to start building the game.</p>
-  </main>
-  <script src="script.js"></script>
-</body>
 </html>
