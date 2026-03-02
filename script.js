@@ -135,8 +135,9 @@ function nextFromBag(){
   const piece = bag.pop();
   blocksSpawned++;
   // Check if we should spawn a bomb
-  if (!bombActive && blocksSpawned >= nextBombIn && nextBombIn > 0) {
+  if (!bombActive && blocksSpawned >= nextBombIn) {
     bombActive = true;
+    blocksSpawned = 0; // Reset counter for next bomb cycle
     nextBombIn = Math.floor(Math.random() * 10) + 10;
     return 'BOMB';
   }
@@ -234,14 +235,11 @@ function clearLines(){
 }
 
 function spawnBlockLine(){
-  // Insert a random line of blocks somewhere in the middle-upper area
-  const insertRow = Math.floor(Math.random() * (ROWS / 2)) + Math.floor(ROWS / 4);
-  if (insertRow < ROWS - 1) {
-    const types = ['I','J','L','O','S','T','Z'];
-    const newLine = Array(COLS).fill(0).map(() => types[Math.floor(Math.random() * types.length)]);
-    board.splice(insertRow, 0, newLine);
-    board.pop(); // Remove bottom row to keep board size
-  }
+  // Insert a random line of blocks at the bottom
+  const types = ['I','J','L','O','S','T','Z'];
+  const newLine = Array(COLS).fill(0).map(() => types[Math.floor(Math.random() * types.length)]);
+  board.splice(ROWS - 1, 0, newLine);
+  board.pop(); // Remove top row to keep board size
 }
 
 function hardDrop(){
@@ -371,7 +369,8 @@ function draw(){
     ctx.fillRect(0, canvas.height/2 - 30, canvas.width, 60);
     ctx.fillStyle = '#fff';
     ctx.font = '32px monospace';
-    ctx.fillText('PAUSED', 40, canvas.height/2 + 8);
+    ctx.textAlign = 'center';
+    ctx.fillText('PAUSED', canvas.width/2, canvas.height/2 + 8);
   }
 }
 
