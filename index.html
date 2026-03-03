@@ -33,8 +33,8 @@
       </div>
       <div class="help">Arrow keys: ← → rotate ↑ ↓  • Space: hard drop • P: pause</div>
 
-      <!-- Mobile controls -->
-      <div id="mobile-controls" style="margin-top:12px;display:none;align-items:center;gap:12px;justify-content:center;">
+      <!-- Mobile controls (fixed & centered on small viewports) -->
+      <div id="mobile-controls" style="margin-top:12px;display:none;align-items:center;gap:12px;justify-content:center;position:fixed;bottom:12px;left:50%;transform:translateX(-50%);z-index:9999;">
         <div id="dpad" style="width:140px;display:grid;grid-template-columns:repeat(3,44px);grid-template-rows:repeat(3,44px);gap:6px;">
           <button data-action="" style="visibility:hidden"></button>
           <button data-action="up" class="ctl">⤴</button>

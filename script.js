@@ -235,9 +235,12 @@ function clearLines(){
 }
 
 function spawnBlockLine(){
-  // Insert a random line of blocks at the bottom
+  // Insert a random line of blocks at the bottom, leaving one hole for playability
   const types = ['I','J','L','O','S','T','Z'];
-  const newLine = Array(COLS).fill(0).map(() => types[Math.floor(Math.random() * types.length)]);
+  const newLine = Array.from({length: COLS}, () => types[Math.floor(Math.random() * types.length)]);
+  // leave a random hole so the player has some space to react
+  const hole = Math.floor(Math.random() * COLS);
+  newLine[hole] = 0;
   board.splice(ROWS - 1, 0, newLine);
   board.pop(); // Remove top row to keep board size
 }
@@ -350,8 +353,9 @@ function draw(){
   if (scoreEl) scoreEl.textContent = String(score);
   if (linesEl) linesEl.textContent = String(lines);
   if (levelEl) levelEl.textContent = String(level);
-  if (nextEl){ 
-    nextEl.textContent = 'NEXT: ' + (nextPiece || ''); 
+  if (nextEl){
+    // Show the emoji/icon for the upcoming piece instead of the raw letter code
+    nextEl.textContent = 'NEXT: ' + (nextPiece ? (COLORS[nextPiece] || nextPiece) : '');
     nextEl.style.color = nextPiece === 'BOMB' ? '#f00' : '#fff';
   }
   renderHighScores();
@@ -427,6 +431,7 @@ function enableMobileControls(){
     if (action === 'left' && pressed) move(-1);
     if (action === 'right' && pressed) move(1);
     if (action === 'up' && pressed) rotateCurrent();
+    if (action === 'drop' && pressed) hardDrop();
     if (action === 'down'){
       if (pressed){
         // immediate step
