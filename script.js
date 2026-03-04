@@ -49,6 +49,9 @@ let isPaused = false;
 let blocksSpawned = 0;
 let bombActive = false;
 let nextBombIn = Math.floor(Math.random() * 10) + 10; // 10-20 blocks
+// Mobile control state
+let mobileControlsInitialized = false;
+let mobileSoftDropTimer = null;
 
 // High score persistence
 const HS_KEY = 'tetris_highscores_v1';
@@ -423,7 +426,11 @@ function enableMobileControls(){
   }
 
   const hard = document.getElementById('hardDropBtn');
-  if (hard) hard.addEventListener('click', e => { hardDrop(); });
+  if (hard) {
+    // Hide hard drop button on mobile; prevent accidental hard drops on touch devices
+    hard.style.display = 'none';
+    hard.addEventListener('click', e => { e.preventDefault(); });
+  }
 
   // Soft-drop continuous while holding 'down'
   let softDropTimer = null;
@@ -431,7 +438,15 @@ function enableMobileControls(){
     if (action === 'left' && pressed) move(-1);
     if (action === 'right' && pressed) move(1);
     if (action === 'up' && pressed) rotateCurrent();
-    if (action === 'drop' && pressed) hardDrop();
+    if (action === 'drop'){
+      // Treat mobile "drop" as a soft drop (hold to continue soft-dropping)
+      if (pressed){
+        if (!collide(current.matrix, current.x, current.y+1)) current.y++;
+        softDropTimer = setInterval(()=>{ if (!collide(current.matrix, current.x, current.y+1)) current.y++; else { clearInterval(softDropTimer); softDropTimer = null; } }, 120);
+      } else {
+        if (softDropTimer){ clearInterval(softDropTimer); softDropTimer = null; }
+      }
+    }
     if (action === 'down'){
       if (pressed){
         // immediate step
