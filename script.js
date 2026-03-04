@@ -357,9 +357,55 @@ function draw(){
   if (linesEl) linesEl.textContent = String(lines);
   if (levelEl) levelEl.textContent = String(level);
   if (nextEl){
-    // Show the emoji/icon for the upcoming piece instead of the raw letter code
-    nextEl.textContent = 'NEXT: ' + (nextPiece ? (COLORS[nextPiece] || nextPiece) : '');
-    nextEl.style.color = nextPiece === 'BOMB' ? '#f00' : '#fff';
+    // Render a small preview canvas showing the upcoming tetromino (better for phones than emojis)
+    let nc = document.getElementById('next-canvas');
+    if (!nc){
+      nc = document.createElement('canvas');
+      nc.id = 'next-canvas';
+      nc.width = 4 * BLOCK;
+      nc.height = 4 * BLOCK;
+      nc.style.width = nc.width + 'px';
+      nc.style.height = nc.height + 'px';
+      nc.style.display = 'block';
+      nc.style.margin = '0 auto 8px';
+      nextEl.innerHTML = '';
+      nextEl.appendChild(nc);
+    }
+    const nctx = nc.getContext('2d');
+    // background
+    nctx.fillStyle = '#000';
+    nctx.fillRect(0,0,nc.width,nc.height);
+
+    if (nextPiece){
+      const m = SHAPES[nextPiece];
+      // center the piece inside a 4x4 matrix
+      const N = 4;
+      const temp = Array.from({length:N}, ()=>Array(N).fill(0));
+      const offsetY = Math.floor((N - m.length)/2);
+      const offsetX = Math.floor((N - m[0].length)/2);
+      for (let y=0;y<m.length;y++) for (let x=0;x<m[y].length;x++) if (m[y][x]) temp[offsetY+y][offsetX+x] = 1;
+
+      for (let y=0;y<N;y++){
+        for (let x=0;x<N;x++){
+          if (temp[y][x]){
+            const colorKey = nextPiece;
+            nctx.fillStyle = COLOR_BG[colorKey] || '#999';
+            nctx.fillRect(x*BLOCK+1, y*BLOCK+1, BLOCK-2, BLOCK-2);
+            nctx.fillStyle = '#000';
+            nctx.font = '14px Arial';
+            nctx.textAlign = 'center';
+            nctx.textBaseline = 'middle';
+            nctx.fillText(COLORS[colorKey] || '?', x*BLOCK + BLOCK/2, y*BLOCK + BLOCK/2);
+          }
+        }
+      }
+    } else {
+      // no upcoming piece
+      nctx.fillStyle = '#fff';
+      nctx.font = '12px monospace';
+      nctx.textAlign = 'center';
+      nctx.fillText('NEXT', nc.width/2, nc.height/2);
+    }
   }
   renderHighScores();
 
