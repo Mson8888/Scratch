@@ -368,7 +368,10 @@ function draw(){
       nc.style.height = nc.height + 'px';
       nc.style.display = 'block';
       nc.style.margin = '0 auto 8px';
-      nextEl.innerHTML = '';
+      nc.style.border = '2px solid #fff';
+      nc.style.borderRadius = '6px';
+      // Add a visible NEXT label above the preview for clarity on phones
+      nextEl.innerHTML = '<div style="font-family:monospace;font-size:12px;margin-bottom:6px;text-align:center;color:#fff">NEXT</div>';
       nextEl.appendChild(nc);
     }
     const nctx = nc.getContext('2d');
